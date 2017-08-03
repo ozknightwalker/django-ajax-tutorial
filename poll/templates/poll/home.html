@@ -1,0 +1,53 @@
+{% extends "poll/base.html" %}
+
+
+{% block content %}
+<form action="{{ form_action }}" method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="create">
+</form>
+
+<h3>Questions</h3>
+<ul id="question_list"></ul>
+{% endblock %}
+
+{% block js_content %}
+<script>
+    Zepto('form').on('submit', function(e) {
+        // overider form submit action by sending ajax request
+        e.preventDefault();
+        var form = Zepto(this);
+        Zepto.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
+            success: function(data, status, xhr) {
+                var element = Zepto('<li />', {text: data.question_text });
+                Zepto('#question_list').prepend(element);
+                form.find('#id_question_text').val('');
+            },
+            error: function(xhr, errorType, error) {
+                // question is not created
+                console.log(xhr, errorType, error);
+            },
+        })
+    });
+
+    function load_data() {
+        // fetch all question in the db
+        Zepto.ajax({
+            type: 'GET',
+            success: function(data, status, xhr) {
+                var result = data.result
+                var list = Zepto('#question_list');
+                result.forEach(function(item) {
+                    var element = Zepto('<li />', {text: item.question_text });
+                    list.prepend(element);
+                });
+            },
+        })
+    }
+    load_data();
+</script>
+{% endblock %}
